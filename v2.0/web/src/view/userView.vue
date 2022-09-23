@@ -16,26 +16,41 @@
              :class="{'room-options':true,'active':nowRoom['roomName'] === item['roomName']}"
              @click="checkoutRoom(index)">
           <a-row>
-            <a-col :span="20">
+            <a-col :span="18">
               {{ item['roomName'] }}
             </a-col>
-            <a-col :span="4">
-              <a-button danger shape="circle" type="primary" @click="delRoom(index)">
-                <template #icon>
-                  <DeleteOutlined/>
-                </template>
-              </a-button>
+            <a-col :span="6">
+              <a-row>
+                <a-col :span="12">
+                  <a-button danger size="small" shape="circle" type="primary" @click="delRoom(index)">
+                    <template #icon>
+                      <DeleteOutlined/>
+                    </template>
+                  </a-button>
+                </a-col>
+                <a-col :span="12">
+                  <a-button size="small" shape="circle" type="primary" @click="shareRoom(index)">
+                    <template #icon>
+                      <ShareAltOutlined/>
+                    </template>
+                  </a-button>
+                </a-col>
+              </a-row>
             </a-col>
             <a-col style="padding-top: 10px;width: 100%">
-              <a-input v-model:value="item['sessionCode']" @change="changeRoomCode(index,item['sessionCode'])"></a-input>
+              <a-form>
+                <a-form-item label="会话码">
+                  <a-input v-model:value="item['sessionCode']" @change="changeRoomCode(index,item['sessionCode'])"></a-input>
+                </a-form-item>
+              </a-form>
             </a-col>
           </a-row>
         </div>
         <div>
           <a-button type="primary" @click="addRoom">
-            添加
+            创建房间
           </a-button>
-          <a-button @click="addRoom">
+          <a-button @click="importRoom">
             一键导入对方房间
           </a-button>
         </div>
@@ -79,15 +94,34 @@
       </a-form-item>
     </a-form>
   </a-modal>
+
+  <a-modal v-model:visible="importRoomModal" title="导入房间" @ok="importRoomOk">
+    <a-form :label-col="{style: { width: '100px' }}">
+      <a-form-item label="导入分享码">
+        <a-input v-model:value="importRoomCode" type="text"></a-input>
+      </a-form-item>
+    </a-form>
+  </a-modal>
+
+  <a-modal v-model:visible="shareCodeModal" title="分享" @ok="shareRoomOk">
+    <a-form :label-col="{style: { width: '100px' }}">
+      <a-form-item label="分享码">
+        <a-input v-model:value="shareCode"></a-input>
+      </a-form-item>
+    </a-form>
+  </a-modal>
 </template>
 
 <script setup>
-import {DeleteOutlined} from "@ant-design/icons-vue";
+import {DeleteOutlined,ShareAltOutlined} from "@ant-design/icons-vue";
 import {onMounted, reactive, ref} from "vue";
 import {message} from "ant-design-vue";
 import {decrypt, encrypt} from "../tool/tool.js";
-
+import CryptoJS from 'crypto-js'
+//添加房间
 const addModal = ref(false);
+//导入房间
+const importRoomModal = ref(false)
 const msgText = ref("");
 let addForm = reactive({
   roomName: "",
@@ -132,9 +166,53 @@ let myInfo = reactive({
   sessionCode: ""
 })
 
+/**
+ * 添加房间
+ */
 const addRoom = function () {
   addModal.value = true;
 }
+
+
+//房间分享码
+const importRoomCode = ref("");
+/**
+ * 导入对方房间
+ */
+const importRoom = function () {
+  importRoomModal.value = true;
+}
+/**
+ * 导入房间
+ */
+const importRoomOk = function () {
+  let roomCodeInfo = importRoomCode.value.split("||");
+  if(roomList.filter((item)=>{return item['roomName'] ===  roomCodeInfo[0]}).length === 0){
+    if (CryptoJS.MD5(roomCodeInfo[0] + roomCodeInfo[1]).toString() === roomCodeInfo[2]){
+        roomList.push(
+            {
+              "roomName": roomCodeInfo[0],
+              "sessionCode": roomCodeInfo[1],
+              "roomKey": addForm.roomKey,
+              "msgInfo": []
+            })
+        importRoomModal.value = false;
+      }else {
+        message.warn("参数不正确")
+      }
+  }else {
+    message.warn("房间已经存在");
+  }
+
+}
+
+
+
+/**
+ * 删除房间
+ * @param index
+ */
+
 const delRoom = function (index) {
   if (nowRoom.roomName === roomList[index]['roomName']){
     nowRoom.roomName = "";
@@ -145,16 +223,34 @@ const delRoom = function (index) {
   roomList.splice(index, 1)
 }
 
+const shareCodeModal = ref(false);
+const shareCode = ref("");
+/**
+ * 分享房间
+ * @param index
+ */
+
+const shareRoom = function (index) {
+  shareCodeModal.value = true;
+  shareCode.value = roomList[index]['roomName'] + "||" + myInfo['sessionCode'] +  "||" +  CryptoJS.MD5(roomList[index]['roomName'] + myInfo['sessionCode']).toString();
+  //房间名||会话码
+}
+
 const changeRoomCode = function (index,code){
   roomList[index]['sessionCode'] = code;
   // nowRoom.sessionCode = code;
   checkoutRoom(index)
+}
+
+const shareRoomOk = function (){
+  shareCodeModal.value = false;
 }
 /**
  * 切换房间
  * @param index
  */
 const checkoutRoom = function (index) {
+  message.success("房间切换：" + roomList[index]['roomName'])
   nowRoom['roomName'] = roomList[index]['roomName'];
   nowRoom['msgInfo'] = roomList[index]['msgInfo'];
   nowRoom['sessionCode'] = roomList[index]['sessionCode'];
