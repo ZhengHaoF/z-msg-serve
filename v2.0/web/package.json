@@ -21,6 +21,7 @@
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^3.0.3",
+    "crypto-js": "^4.1.1",
     "vite": "^3.0.7"
   }
 }
