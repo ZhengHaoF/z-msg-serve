@@ -54,7 +54,7 @@ let wsServer = ws.createServer(connection => {
     connection.on("error", () => {
         console.log('服务异常关闭...')
     })
-}).listen(3000)
+}).listen(3001)
 
 // 创建web服务，设定端口号和ip地址
 var server = app.listen(8081, function () {

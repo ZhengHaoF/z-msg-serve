@@ -27,7 +27,7 @@
               </a-button>
             </a-col>
             <a-col style="padding-top: 10px;width: 100%">
-              <a-input v-model:value="item['sessionCode']" disabled></a-input>
+              <a-input v-model:value="item['sessionCode']" @change="changeRoomCode(index,item['sessionCode'])"></a-input>
             </a-col>
           </a-row>
         </div>
@@ -144,6 +144,12 @@ const delRoom = function (index) {
   }
   roomList.splice(index, 1)
 }
+
+const changeRoomCode = function (index,code){
+  roomList[index]['sessionCode'] = code;
+  // nowRoom.sessionCode = code;
+  checkoutRoom(index)
+}
 /**
  * 切换房间
  * @param index
@@ -189,7 +195,7 @@ const sendMsg = function () {
 let websocket = reactive(null);
 const initWebSocket = function () {
   //初始化weosocket
-  const wsuri = "ws://" + location.hostname + ":3000"; //ws地址
+  const wsuri = "ws://" + location.hostname + ":3001"; //ws地址
   websocket = new WebSocket(wsuri);
   websocket.onopen = websocketonopen;
   websocket.onerror = websocketonerror;
