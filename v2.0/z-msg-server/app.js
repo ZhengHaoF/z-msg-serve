@@ -7,12 +7,12 @@ var app = express();
 const ws = require('nodejs-websocket')
 
 //  设定使用的静态资源路径
-app.use('/pages', express.static('pages'))
+app.use('/', express.static('pages'))
 
-// 执行app的get请求处理 ，处理访问根目录下的请求
-app.get('/', function (req, res) {
-    res.send('Hello World');
-})
+// // 执行app的get请求处理 ，处理访问根目录下的请求
+// app.get('/', function (req, res) {
+//     res.send('Hello World');
+// })
 
 
 // 执行websocket处理连接方法

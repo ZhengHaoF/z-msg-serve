@@ -31,9 +31,14 @@
             </a-col>
           </a-row>
         </div>
-        <a-button @click="addRoom">
-          添加
-        </a-button>
+        <div>
+          <a-button type="primary" @click="addRoom">
+            添加
+          </a-button>
+          <a-button @click="addRoom">
+            一键导入对方房间
+          </a-button>
+        </div>
       </div>
     </a-col>
     <a-col :span="19">
@@ -184,7 +189,7 @@ const sendMsg = function () {
 let websocket = reactive(null);
 const initWebSocket = function () {
   //初始化weosocket
-  const wsuri = 'ws://localhost:3000'; //ws地址
+  const wsuri = "ws://" + location.hostname + ":3000"; //ws地址
   websocket = new WebSocket(wsuri);
   websocket.onopen = websocketonopen;
   websocket.onerror = websocketonerror;
