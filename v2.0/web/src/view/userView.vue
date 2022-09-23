@@ -22,14 +22,14 @@
             <a-col :span="6">
               <a-row>
                 <a-col :span="12">
-                  <a-button danger size="small" shape="circle" type="primary" @click="delRoom(index)">
+                  <a-button danger shape="circle" size="small" type="primary" @click="delRoom(index)">
                     <template #icon>
                       <DeleteOutlined/>
                     </template>
                   </a-button>
                 </a-col>
                 <a-col :span="12">
-                  <a-button size="small" shape="circle" type="primary" @click="shareRoom(index)">
+                  <a-button shape="circle" size="small" type="primary" @click="shareRoom(index)">
                     <template #icon>
                       <ShareAltOutlined/>
                     </template>
@@ -40,7 +40,8 @@
             <a-col style="padding-top: 10px;width: 100%">
               <a-form>
                 <a-form-item label="会话码">
-                  <a-input v-model:value="item['sessionCode']" @change="changeRoomCode(index,item['sessionCode'])"></a-input>
+                  <a-input v-model:value="item['sessionCode']"
+                           @change="changeRoomCode(index,item['sessionCode'])"></a-input>
                 </a-form-item>
               </a-form>
             </a-col>
@@ -90,7 +91,7 @@
         <a-input v-model:value="addForm.sessionCode" type="text"></a-input>
       </a-form-item>
       <a-form-item label="双方约定密码">
-        <a-input v-model:value="addForm.roomKey"  type="text"></a-input>
+        <a-input v-model:value="addForm.roomKey" type="text"></a-input>
       </a-form-item>
     </a-form>
   </a-modal>
@@ -99,6 +100,9 @@
     <a-form :label-col="{style: { width: '100px' }}">
       <a-form-item label="导入分享码">
         <a-input v-model:value="importRoomCode" type="text"></a-input>
+      </a-form-item>
+      <a-form-item label="双方约定密码">
+        <a-input v-model:value="importRoomKey"></a-input>
       </a-form-item>
     </a-form>
   </a-modal>
@@ -113,7 +117,7 @@
 </template>
 
 <script setup>
-import {DeleteOutlined,ShareAltOutlined} from "@ant-design/icons-vue";
+import {DeleteOutlined, ShareAltOutlined} from "@ant-design/icons-vue";
 import {onMounted, reactive, ref} from "vue";
 import {message} from "ant-design-vue";
 import {decrypt, encrypt} from "../tool/tool.js";
@@ -130,7 +134,9 @@ let addForm = reactive({
 })
 //添加房间
 const addOk = function () {
-  if(roomList.filter((item)=>{return item['roomName'] ===  addForm.roomName}).length === 0){
+  if (roomList.filter((item) => {
+    return item['roomName'] === addForm.roomName
+  }).length === 0) {
     roomList.push(
         {
           "roomName": addForm.roomName,
@@ -142,7 +148,7 @@ const addOk = function () {
     addForm.sessionCode = ""
     addForm.roomKey = ""
     addModal.value = false;
-  }else {
+  } else {
     message.warn("房间已经存在");
   }
 
@@ -176,6 +182,7 @@ const addRoom = function () {
 
 //房间分享码
 const importRoomCode = ref("");
+const importRoomKey = ref("");
 /**
  * 导入对方房间
  */
@@ -187,25 +194,28 @@ const importRoom = function () {
  */
 const importRoomOk = function () {
   let roomCodeInfo = importRoomCode.value.split("||");
-  if(roomList.filter((item)=>{return item['roomName'] ===  roomCodeInfo[0]}).length === 0){
-    if (CryptoJS.MD5(roomCodeInfo[0] + roomCodeInfo[1]).toString() === roomCodeInfo[2]){
-        roomList.push(
-            {
-              "roomName": roomCodeInfo[0],
-              "sessionCode": roomCodeInfo[1],
-              "roomKey": addForm.roomKey,
-              "msgInfo": []
-            })
-        importRoomModal.value = false;
-      }else {
-        message.warn("参数不正确")
-      }
-  }else {
+  if (roomList.filter((item) => {
+    return item['roomName'] === roomCodeInfo[0]
+  }).length === 0) {
+    if (CryptoJS.MD5(roomCodeInfo[0] + roomCodeInfo[1] + importRoomKey.value).toString() === roomCodeInfo[2]) {
+      roomList.push(
+          {
+            "roomName": roomCodeInfo[0],
+            "sessionCode": roomCodeInfo[1],
+            "roomKey": importRoomKey.value,
+            "msgInfo": []
+          })
+      importRoomModal.value = false;
+      importRoomCode.value = "";
+      importRoomKey.value = "";
+    } else {
+      message.warn("参数不正确")
+    }
+  } else {
     message.warn("房间已经存在");
   }
 
 }
-
 
 
 /**
@@ -214,7 +224,7 @@ const importRoomOk = function () {
  */
 
 const delRoom = function (index) {
-  if (nowRoom.roomName === roomList[index]['roomName']){
+  if (nowRoom.roomName === roomList[index]['roomName']) {
     nowRoom.roomName = "";
     nowRoom.msgInfo = [];
     nowRoom.sessionCode = "";
@@ -225,6 +235,7 @@ const delRoom = function (index) {
 
 const shareCodeModal = ref(false);
 const shareCode = ref("");
+
 /**
  * 分享房间
  * @param index
@@ -232,17 +243,17 @@ const shareCode = ref("");
 
 const shareRoom = function (index) {
   shareCodeModal.value = true;
-  shareCode.value = roomList[index]['roomName'] + "||" + myInfo['sessionCode'] +  "||" +  CryptoJS.MD5(roomList[index]['roomName'] + myInfo['sessionCode']).toString();
+  shareCode.value = roomList[index]['roomName'] + "||" + myInfo['sessionCode'] + "||" + CryptoJS.MD5(roomList[index]['roomName'] + myInfo['sessionCode'] + roomList[index]['roomKey']).toString();
   //房间名||会话码
 }
 
-const changeRoomCode = function (index,code){
+const changeRoomCode = function (index, code) {
   roomList[index]['sessionCode'] = code;
   // nowRoom.sessionCode = code;
   checkoutRoom(index)
 }
 
-const shareRoomOk = function (){
+const shareRoomOk = function () {
   shareCodeModal.value = false;
 }
 /**
@@ -267,7 +278,7 @@ onMounted(() => {
  * 发送信息
  */
 const sendMsg = function () {
-  if(nowRoom.roomName === ""){
+  if (nowRoom.roomName === "") {
     message.info("未选择房间")
     return 0;
   }
